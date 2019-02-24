@@ -15,7 +15,7 @@ In file included from /Users/maximocazares/workspace/Axoff/src/main/cpp/Robot.cp
  #warning "TimedRobot.h is deprecated; include frc/TimedRobot.h instead"
   ^~~~~~~
 /Users/maximocazares/workspace/Axoff/build/tmp/expandedArchives/wpilibc-cpp-2019.2.1-headers.zip_c5f7002a6c1dfda8aa2899e2594d01fe/TimedRobot.h:14:2: warning: #warning "TimedRobot.h is deprecated; include frc/TimedRobot.h instead" [-Wcpp]
-/Users/maximocazares/workspace/Axoff/src/main/cpp/Robot.cpp:96:57: warning: 'static std::shared_ptr<nt::NetworkTable> nt::NetworkTable::GetTable(wpi::StringRef)' is deprecated: use NetworkTableInstance::GetTable() or NetworkTableInstance::GetEntry() instead [-Wdeprecated-declarations]
+/Users/maximocazares/workspace/Axoff/src/main/cpp/Robot.cpp:98:57: warning: 'static std::shared_ptr<nt::NetworkTable> nt::NetworkTable::GetTable(wpi::StringRef)' is deprecated: use NetworkTableInstance::GetTable() or NetworkTableInstance::GetEntry() instead [-Wdeprecated-declarations]
  std::shared_ptr<NetworkTable> LimeTable = NetworkTable::GetTable("limelight");
                                                          ^~~~~~~~
 In file included from /Users/maximocazares/workspace/Axoff/build/tmp/expandedArchives/wpilibc-cpp-2019.2.1-headers.zip_c5f7002a6c1dfda8aa2899e2594d01fe/frc/Preferences.h:16:0,
@@ -25,7 +25,7 @@ In file included from /Users/maximocazares/workspace/Axoff/build/tmp/expandedArc
 /Users/maximocazares/workspace/Axoff/build/tmp/expandedArchives/ntcore-cpp-2019.2.1-headers.zip_bb0cec940e93e7a2ed066107bd22e12e/networktables/NetworkTable.h:293:40: note: declared here
    static std::shared_ptr<NetworkTable> GetTable(StringRef key);
                                         ^~~~~~~~
-/Users/maximocazares/workspace/Axoff/src/main/cpp/Robot.cpp:96:77: warning: 'static std::shared_ptr<nt::NetworkTable> nt::NetworkTable::GetTable(wpi::StringRef)' is deprecated: use NetworkTableInstance::GetTable() or NetworkTableInstance::GetEntry() instead [-Wdeprecated-declarations]
+/Users/maximocazares/workspace/Axoff/src/main/cpp/Robot.cpp:98:77: warning: 'static std::shared_ptr<nt::NetworkTable> nt::NetworkTable::GetTable(wpi::StringRef)' is deprecated: use NetworkTableInstance::GetTable() or NetworkTableInstance::GetEntry() instead [-Wdeprecated-declarations]
  std::shared_ptr<NetworkTable> LimeTable = NetworkTable::GetTable("limelight");
                                                                              ^
 In file included from /Users/maximocazares/workspace/Axoff/build/tmp/expandedArchives/wpilibc-cpp-2019.2.1-headers.zip_c5f7002a6c1dfda8aa2899e2594d01fe/frc/Preferences.h:16:0,
