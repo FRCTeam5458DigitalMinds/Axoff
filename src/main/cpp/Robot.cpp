@@ -38,10 +38,6 @@ WPI_VictorSPX LeftMotorOne{10};
 WPI_TalonSRX LeftMotorTwo{11};
 WPI_VictorSPX LeftMotorThree{12};
 
-// Drive Train Encoders
-frc::Encoder LeftEnc = ;
-frc::Encoder RightEnc{4,5};
-//                     ^both # are subject to change...
 // Helps Driving 
 float signed_square(float x){
   return x * fabsf(x);
@@ -51,7 +47,6 @@ frc::ADXRS450_Gyro Gyro{};
 
 // Cargo Intake
 TalonSRX CargoIntakeMotor{2};
-//                         ^ Unknown
 int Spiked = 0;
 
 // Pneumatics
@@ -121,11 +116,6 @@ void Robot::RobotInit() {
   m_chooser.SetDefaultOption(kAutoNameDefault, kAutoNameDefault);
   m_chooser.AddOption(kAutoNameCustom, kAutoNameCustom);
   frc::SmartDashboard::PutData("Auto Modes", &m_chooser);
-  
-  LeftEnc.SetDistancePerPulse(1.0 / 360.0 * 2.0 * M_PI * 2);
-	LeftEnc.Reset();
-	RightEnc.SetDistancePerPulse(1.0 / 360.0 * 2.0 * M_PI * 2);
-	RightEnc.Reset();
 
   HatchIntake.Set(false);
   CargoIntake.Set(false);
