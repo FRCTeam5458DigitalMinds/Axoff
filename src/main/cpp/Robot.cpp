@@ -69,13 +69,12 @@ Hatch holes:
   2 | Middle | 47 Inches   | 45.323 revolutions
   0 | Bottom | 19 Inches   | 18.322 revolutions
 */
-/*
-WPI_TalonSRX ElevatorMotorOne{1};
+
+WPI_TalonSRX ElevatorMotorOne{0};
 WPI_TalonSRX ElevatorMotorTwo{13};
 //                             ^ Unknown
-
+/*
 frc::SpeedControllerGroup Elevator{ ElevatorMotorOne, ElevatorMotorTwo};
-frc::Encoder ElevatorEnc{0, 1};
 bool Elevator = true;
 int ElevatorPosition = 0;
 float ElevatorPositions [] = {18.322, 26.518, 45.323, 53.519, 72.324, 80.521};
@@ -90,13 +89,12 @@ bool ElevatorButtonPressed = false;
 frc::Joystick JoyAccel1{0}, Xbox{1}, RaceWheel{2};
 
 // LimeLight
-std::shared_ptr<NetworkTable> LimeTable = NetworkTable::GetTable("limelight");
+//std::shared_ptr<NetworkTable> LimeTable = NetworkTable::GetTable("limelight");
 
 // Limit Switches
 frc::DigitalInput ElevatorLimitBottom{0};
-frc::DigitalInput ElevatorLimitTop {1};
-frc::DigitalInput HatchLimitLeft{2};
-frc::DigitalInput HatchLimitRight{3};
+frc::DigitalInput HatchLimitLeft{1};
+frc::DigitalInput HatchLimitRight{2};
 //                                ^all #s are subject to change...
 
 // Variables for intake
@@ -128,7 +126,11 @@ void Robot::RobotInit() {
 /*Called on every robot packet, no matter what mode*/
 void Robot::RobotPeriodic() {
 
-  std::cout << pdp.GetCurrent(2) << std::endl;
+
+  std::cout << "Elevator: " << ElevatorLimitBottom.Get() << std::endl;
+  std::cout << "Hatch Left: " << HatchLimitLeft.Get() << std::endl;
+  std::cout << "Hatch Right: " << HatchLimitRight.Get() << std::endl;
+  std::cout << "Elevator Encoder: " << ElevatorMotorOne.GetSelectedSensorPosition() << std::endl;
 
 }
 
@@ -171,35 +173,21 @@ void Robot::TeleopPeriodic() {
   float derivAngle = sumAngle - LastSumAngle;
   float correctionAngle = (sumAngle * 0.04) + (derivAngle *0.02);
 
-  /*
   // Manual Elevator Movement
   if (XboxRightAnalogY > 0.02 || XboxRightAnalogY < -0.02) {
-    Elevator.Set(XboxRightAnalogY);
+    ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
+		ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
   } else {
-    Elevator.Set(0);
-  }
-
-  // Elevator is at top
-  if (ElevatorLimitTop.Get()) {
-    if (!(NextPosition < ElevatorPosition)){
-      Elevator.Set(0);
-    }
-    if (!(XboxRightAnalogY < -0.02)) {
-      Elevator.Set(0);
-    }
+    ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+		ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
   }
 
   // Elevator is at bottom
   if (ElevatorLimitBottom.Get()){
-    ElevatorEnc.Reset();
-    if (!(NextPosition > ElevatorPosition)){
-      Elevator.Set(0);
-    }
-    if (!(XboxRightAnalogY > 0.02)) {
-      Elevator.Set(0);
-    }
+    ElevatorMotorOne.SetSelectedSensorPosition(0);
   }
 
+  /*
   // Move elevator up automatically
   if (Xbox.GetRawButton(6)){
     if(!ElevatorButtonPressed) {
@@ -360,12 +348,12 @@ void Robot::TeleopPeriodic() {
 	  } 
     else {
 	    //Dont spin any drive train motors if the driver is not doing anything
-		  RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0 - correctionAngle);
-		  RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0 - correctionAngle);
-		  RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0 - correctionAngle);
-		  LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0 + correctionAngle);
-      LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0 + correctionAngle);
-      LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0 + correctionAngle);
+		  RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+		  RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+		  RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+		  LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+      LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+      LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
   	}
 	}
   
