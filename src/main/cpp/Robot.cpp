@@ -179,20 +179,18 @@ void Robot::TeleopPeriodic() {
   if (XboxRightAnalogY > 0.15 || XboxRightAnalogY < -0.15) {
     ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
 		ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
-  /*} else {
-    if((NextPosition > ElevatorMotorOne.GetSelectedSensorPosition()) && (ElevatorMotorOne.GetSelectedSensorPosition() >= 0)){
-      std::cout << "up" << std::endl;
-      ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
-      ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
-    } else if((NextPosition < ElevatorMotorOne.GetSelectedSensorPosition())){
-      std::cout << "down" << std::endl;
-      ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
-      ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
-    */} else {
-      ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
-      ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
-    }
-  //}*/
+    // If the NextPosition variable is different than the encoder (with a +-1000 unit buffer), adjust elevator
+  } else if((NextPosition < (ElevatorMotorOne.GetSelectedSensorPosition()-1000)) || (NextPosition > (ElevatorMotorOne.GetSelectedSensorPosition()+1000))){
+    // Use the function |enc-nextpos|/enc-nextpos to get if it's pos or neg difference. 
+    int upordown = abs(ElevatorMotorOne.GetSelectedSensorPosition() - NextPosition)/ElevatorMotorOne.GetSelectedSensorPosition() - NextPosition;
+    // Move the elevator up or down
+    ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, upordown*-0.2);
+    ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, upordown*-0.2);
+  } else {
+    // Holding voltage
+    ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+    ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+  }
 
   if (ElevatorLimitBottom.Get()){
     ElevatorMotorOne.SetSelectedSensorPosition(0);
