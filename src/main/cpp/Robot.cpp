@@ -58,30 +58,30 @@ frc::Solenoid HatchIntake{0};
 bool HatchButton = false;
 
 // Elevator Stuff
-/*1 Encoder Revolution = 1.037 inches
-Encoder is ~1 inch off of the ground
+/*1 Encoder Unit = 0.0007675 inches
+Encoder at 0 is ~7.75 inch off of the ground
 Ball holes:
-  5 | Top    | 83.5 Inches | 80.521 revolutions
-  3 | Middle | 55.5 Inches | 53.519 revolutions
-  1 | Bottom | 27.5 Inches | 26.518 revolutions
+  5 | Top    | 83.5 Inches | 98697 units
+  3 | Middle | 55.5 Inches | 62213 units
+  1 | Bottom | 27.5 Inches | 25733 units
 Hatch holes:
-  4 | Top    | 75 Inches   | 72.324 revolutions
-  2 | Middle | 47 Inches   | 45.323 revolutions
-  0 | Bottom | 19 Inches   | 18.322 revolutions
+  4 | Top    | 75 Inches   | 87622 units
+  2 | Middle | 47 Inches   | 51140 units
+  0 | Bottom | 19 Inches   | 14658 units
+
+x inches - 7.75
+---------------
+    0.0007675
 */
 
 WPI_TalonSRX ElevatorMotorOne{0};
 WPI_TalonSRX ElevatorMotorTwo{13};
 //                             ^ Unknown
-/*
-frc::SpeedControllerGroup Elevator{ ElevatorMotorOne, ElevatorMotorTwo};
-bool Elevator = true;
 int ElevatorPosition = 0;
-float ElevatorPositions [] = {18.322, 26.518, 45.323, 53.519, 72.324, 80.521};
+float ElevatorPositions [] = {0, 14658, 25733, 51140, 62213, 87622, 98697};
 int ElevatorPositionsSize = sizeof(ElevatorPositions)/sizeof(ElevatorPositions[0]); 
 float NextPosition;
-bool ElevatorButtonPressed = false;
-*/
+bool ElevatorButtonPressed = true;
 
 // Limit Switch 
 
@@ -127,10 +127,8 @@ void Robot::RobotInit() {
 void Robot::RobotPeriodic() {
 
 
-  std::cout << "Elevator: " << ElevatorLimitBottom.Get() << std::endl;
-  std::cout << "Hatch Left: " << HatchLimitLeft.Get() << std::endl;
-  std::cout << "Hatch Right: " << HatchLimitRight.Get() << std::endl;
-  std::cout << "Elevator Encoder: " << ElevatorMotorOne.GetSelectedSensorPosition() << std::endl;
+  std::cout << "Left " << HatchLimitLeft.Get() << std::endl;
+  std::cout << "Right " << HatchLimitRight.Get() << std::endl;
 
 }
 
@@ -157,7 +155,11 @@ void Robot::TeleopInit() {
   RightMotorTwo.SetInverted(true);
   RightMotorThree.SetInverted(true);
 
+  ElevatorMotorOne.SetSelectedSensorPosition(0);
+
   Gyro.Reset();
+
+  NextPosition = 0;
 
 }
 
@@ -174,47 +176,42 @@ void Robot::TeleopPeriodic() {
   float correctionAngle = (sumAngle * 0.04) + (derivAngle *0.02);
 
   // Manual Elevator Movement
-  if (XboxRightAnalogY > 0.02 || XboxRightAnalogY < -0.02) {
+  if (XboxRightAnalogY > 0.15 || XboxRightAnalogY < -0.15) {
     ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
 		ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
-  } else {
-    ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-		ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-  }
+  /*} else {
+    if((NextPosition > ElevatorMotorOne.GetSelectedSensorPosition()) && (ElevatorMotorOne.GetSelectedSensorPosition() >= 0)){
+      std::cout << "up" << std::endl;
+      ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+      ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+    } else if((NextPosition < ElevatorMotorOne.GetSelectedSensorPosition())){
+      std::cout << "down" << std::endl;
+      ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
+      ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
+    */} else {
+      ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+      ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+    }
+  //}*/
 
-  // Elevator is at bottom
   if (ElevatorLimitBottom.Get()){
     ElevatorMotorOne.SetSelectedSensorPosition(0);
   }
 
-  /*
   // Move elevator up automatically
   if (Xbox.GetRawButton(6)){
     if(!ElevatorButtonPressed) {
-      if(ElevatorPosition < ElevatorPositionsSize){
-        NextPosition = ElevatorPositions[ElevatorPosition + 1];
-      }
+      NextPosition = ElevatorPositions[ElevatorPosition + 1];
       ElevatorButtonPressed = true;
     }
   } else if (Xbox.GetRawButton(5)){
     if(!ElevatorButtonPressed) {
-      if(ElevatorPosition > 0){
-        NextPosition = ElevatorPositions[ElevatorPosition - 1];
-      }
+      NextPosition = ElevatorPositions[ElevatorPosition - 1];
       ElevatorButtonPressed = true;
     }
   } else {
     ElevatorButtonPressed = false;
   }
-
-  if(ElevatorEnc.Get() < NextPosition){
-    Elevator.Set(0.2);
-  } else if (ElevatorEnc.Get() > NextPosition){
-    Elevator.Set(-0.2);
-  } else {
-    Elevator.Set(0);
-  }
-  */
 
   // Intake Lift
   if (Xbox.GetRawButton(2)){
@@ -229,15 +226,15 @@ void Robot::TeleopPeriodic() {
   // Hatch Grabber
   if (Xbox.GetRawButton(4)){
     if (!HatchButton){
-      HatchIntake.Set(!CargoIntake.Get());
+      HatchIntake.Set(!HatchIntake.Get());
       HatchButton = true;
     }
   } else {
     HatchButton = false;
   }
 
-  if (HatchLimitLeft.Get() && HatchLimitRight.Get()){
-    HatchIntake.Set(true);
+  if (!HatchLimitLeft.Get() || !HatchLimitRight.Get()){
+    HatchIntake.Set(false);
   }
 
   // Intakes the ball when button 3 is pressed
