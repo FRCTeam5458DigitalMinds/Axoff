@@ -53,6 +53,7 @@ int Spiked = 0;
 // Lift
 frc::Solenoid CargoIntake{1};
 bool CargoButton = false;
+
 // HatchLock
 frc::Solenoid HatchIntake{0};
 bool HatchButton = false;
@@ -74,9 +75,11 @@ x inches - 7.75
     0.0007675
 */
 
+//Elevator Motors
 WPI_TalonSRX ElevatorMotorOne{0};
 WPI_TalonSRX ElevatorMotorTwo{13};
-//                             ^ Unknown
+
+//Set Postitons for the Rocket (Elevator)
 int ElevatorPosition = 0;
 float ElevatorPositions [] = {0, 14658, 25733, 51140, 62213, 87622, 98697};
 int ElevatorPositionsSize = sizeof(ElevatorPositions)/sizeof(ElevatorPositions[0]); 
@@ -198,12 +201,13 @@ void Robot::TeleopPeriodic() {
     ElevatorMotorOne.SetSelectedSensorPosition(0);
   }
 
-  // Move elevator up automatically
+  // Move Elevator Up Automatically
   if (Xbox.GetRawButton(6)){
     if(!ElevatorButtonPressed) {
       NextPosition = ElevatorPositions[ElevatorPosition + 1];
       ElevatorButtonPressed = true;
     }
+    //Moves Elevator Down Automatically
   } else if (Xbox.GetRawButton(5)){
     if(!ElevatorButtonPressed) {
       NextPosition = ElevatorPositions[ElevatorPosition - 1];
