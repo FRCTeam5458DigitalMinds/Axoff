@@ -177,8 +177,12 @@ void Robot::TeleopPeriodic() {
 
   // Manual Elevator Movement
   if (XboxRightAnalogY > 0.15 || XboxRightAnalogY < -0.15) {
-    ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
-		ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
+    if(ElevatorMotorOne.GetSelectedSensorPosition() > 5000){
+      ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
+      ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
+    } else {
+      ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOuput, XboxRightAnalogY*0.25);
+    }
     // If the NextPosition variable is different than the encoder (with a +-1000 unit buffer), adjust elevator
   } else if((NextPosition < (ElevatorMotorOne.GetSelectedSensorPosition()-1000)) || (NextPosition > (ElevatorMotorOne.GetSelectedSensorPosition()+1000))){
     // Use the function |enc-nextpos|/enc-nextpos to get if it's pos or neg difference. 
