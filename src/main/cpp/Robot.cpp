@@ -80,9 +80,10 @@ WPI_TalonSRX ElevatorMotorOne{0};
 WPI_TalonSRX ElevatorMotorTwo{13};
 
 //Set Postitons for the Rocket (Elevator)
-float TopHatch = 75 - 7.75;
-float MiddleHatch = 47 - 7.75;
-float BottomHatch = 19 - 7.75;
+float EncoderHeight = 7.75;
+float TopHatch = 75 - EncoderHeight;
+float MiddleHatch = 47 - EncoderHeight;
+float BottomHatch = 19 - EncoderHeight;
 float HatchBallOffset = 7.5;
 float InchesPerEncUnit = 0.0007675;
 float NextPosition;
