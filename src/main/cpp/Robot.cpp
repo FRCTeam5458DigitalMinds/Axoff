@@ -1,5 +1,5 @@
 /*
-  2019 - Axon
+  2019 - Axoff
 
   "🅱️"
     - The Team 5458 Programming Team
@@ -80,12 +80,15 @@ WPI_TalonSRX ElevatorMotorOne{0};
 WPI_TalonSRX ElevatorMotorTwo{13};
 
 //Set Postitons for the Rocket (Elevator)
-float EncoderHeight = 7.75;
-float TopHatch = 75 - EncoderHeight;
-float MiddleHatch = 47 - EncoderHeight;
-float BottomHatch = 19 - EncoderHeight;
-float HatchBallOffset = 7.5;
-float InchesPerEncUnit = 0.0007675;
+float EncoderHeight = 7.75; // Encoder height from ground inches
+float TopHatch = 75 - EncoderHeight; // Top Hatch height from ground inches
+float MiddleHatch = 47 - EncoderHeight; // Middle Hatch height from ground inches
+float BottomHatch = 19 - EncoderHeight; // Bottom Hatch height from ground inches
+float HatchBallOffset = 8.5; // Inches between ball and hatch holes (Middle & Middle)
+float InchesPerEncUnit = 0.0007675; // Inches per Encoder unit
+float HoleOffset = 2000; // Distance the elevator can move between in encoder units
+float ElevatorSpeedUp = 0.65; // Speed that elevator will move up
+float ElevatorSpeedDown = 0.1; // Speed that elevator will move down (gravity)
 float NextPosition;
 bool ElevatorButtonPressed = true;
 bool ElevatorShouldAuto = false;
@@ -141,9 +144,6 @@ void Robot::RobotPeriodic() {
   if (ElevatorLimitBottom.Get()){
     ElevatorMotorOne.SetSelectedSensorPosition(0);
   }
-
-  std::cout << "Encoder " << ElevatorMotorOne.GetSelectedSensorPosition() << std::endl;
-  std::cout << "Next Pos " << NextPosition << std::endl;
 
 }
 
@@ -201,14 +201,13 @@ void Robot::TeleopPeriodic() {
     ElevatorShouldAuto = false;
   } else {
     if (ElevatorShouldAuto){
-      if(!(ElevatorMotorOne.GetSelectedSensorPosition() > NextPosition-5000 && ElevatorMotorOne.GetSelectedSensorPosition() < NextPosition+5000)){
-        int UpOrDown = abs(ElevatorMotorOne.GetSelectedSensorPosition()-NextPosition)/(ElevatorMotorOne.GetSelectedSensorPosition()-NextPosition);
-        if(UpOrDown > 0){
-          ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, UpOrDown*0.1);
-        ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, UpOrDown*0.1);
+      if(!(ElevatorMotorOne.GetSelectedSensorPosition() > NextPosition-HoleOffset && ElevatorMotorOne.GetSelectedSensorPosition() < NextPosition+HoleOffset)){
+        if(ElevatorMotorOne.GetSelectedSensorPosition() > NextPosition+HoleOffset){
+          ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, ElevatorSpeedDown);
+          ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, ElevatorSpeedDown);
         } else {
-          ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, UpOrDown*0.5);
-          ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, UpOrDown*0.5);
+          ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -ElevatorSpeedUp);
+          ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -ElevatorSpeedUp);
         }
       } else {
         ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
@@ -225,7 +224,7 @@ void Robot::TeleopPeriodic() {
     }
   }
 
-  if (Xbox.GetPOV(0)){
+  if (Xbox.GetPOV() == 0){
     if(!TopPOV){
       if(ToggleBall){
         NextPosition = (TopHatch - HatchBallOffset) / InchesPerEncUnit;
@@ -233,12 +232,13 @@ void Robot::TeleopPeriodic() {
         NextPosition = (TopHatch) / InchesPerEncUnit;
       }
       TopPOV = true;
+      ElevatorShouldAuto = true;
     }
   } else {
     TopPOV = false;
   }
 
-  if (Xbox.GetPOV(90)){
+  if (Xbox.GetPOV() == 90){
     if(!RightPOV){
       ToggleBall = !ToggleBall;
       RightPOV = true;
@@ -247,7 +247,7 @@ void Robot::TeleopPeriodic() {
     RightPOV = false;
   }
 
-  if (Xbox.GetPOV(180)){
+  if (Xbox.GetPOV() == 180){
     if(!BottomPOV){
       if(ToggleBall){
         NextPosition = (BottomHatch - HatchBallOffset) / InchesPerEncUnit;
@@ -255,12 +255,13 @@ void Robot::TeleopPeriodic() {
         NextPosition = (BottomHatch) / InchesPerEncUnit;
       }
       BottomPOV = true;
+      ElevatorShouldAuto = true;
     }
   } else {
     BottomPOV = false;
   }
 
-  if (Xbox.GetPOV(270)){
+  if (Xbox.GetPOV() == 270){
     if(!LeftPOV){
       if(ToggleBall){
         NextPosition = (MiddleHatch - HatchBallOffset) / InchesPerEncUnit;
@@ -268,13 +269,10 @@ void Robot::TeleopPeriodic() {
         NextPosition = (MiddleHatch) / InchesPerEncUnit;
       }
       LeftPOV = true;
+      ElevatorShouldAuto = true;
     }
   } else {
     LeftPOV = false;
-  }
-
-  if(ToggleBall){
-    Xbox.SetRumble(frc::GenericHID::RumbleType::kLeftRumble, 1);
   }
 
   /*// Move Elevator Up Automatically
