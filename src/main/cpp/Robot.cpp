@@ -80,11 +80,19 @@ WPI_TalonSRX ElevatorMotorOne{0};
 WPI_TalonSRX ElevatorMotorTwo{13};
 
 //Set Postitons for the Rocket (Elevator)
-int ElevatorPosition = 0;
-float ElevatorPositions [] = {0, 14658, 25733, 51140, 62213, 87622, 98697};
-int ElevatorPositionsSize = sizeof(ElevatorPositions)/sizeof(ElevatorPositions[0]); 
+float TopHatch = 75 - 7.75;
+float MiddleHatch = 47 - 7.75;
+float BottomHatch = 19 - 7.75;
+float HatchBallOffset = 7.5;
+float InchesPerEncUnit = 0.0007675;
 float NextPosition;
 bool ElevatorButtonPressed = true;
+bool ElevatorShouldAuto = false;
+bool ToggleBall = false;
+bool TopPOV = false;
+bool RightPOV = false;
+bool BottomPOV = false;
+bool LeftPOV = false;
 
 // Limit Switch 
 
@@ -129,9 +137,12 @@ void Robot::RobotInit() {
 /*Called on every robot packet, no matter what mode*/
 void Robot::RobotPeriodic() {
 
+  if (ElevatorLimitBottom.Get()){
+    ElevatorMotorOne.SetSelectedSensorPosition(0);
+  }
 
-  std::cout << "Left " << HatchLimitLeft.Get() << std::endl;
-  std::cout << "Right " << HatchLimitRight.Get() << std::endl;
+  std::cout << "Encoder " << ElevatorMotorOne.GetSelectedSensorPosition() << std::endl;
+  std::cout << "Next Pos " << NextPosition << std::endl;
 
 }
 
@@ -179,43 +190,111 @@ void Robot::TeleopPeriodic() {
   float correctionAngle = (sumAngle * 0.04) + (derivAngle *0.02);
 
   // Manual Elevator Movement
-  if (XboxRightAnalogY > 0.15 || XboxRightAnalogY < -0.15) {
+  if (XboxRightAnalogY < -0.15) {
     ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
 		ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
-  /*} else {
-    if((NextPosition > ElevatorMotorOne.GetSelectedSensorPosition()) && (ElevatorMotorOne.GetSelectedSensorPosition() >= 0)){
-      std::cout << "up" << std::endl;
-      ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
-      ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
-    } else if((NextPosition < ElevatorMotorOne.GetSelectedSensorPosition())){
-      std::cout << "down" << std::endl;
-      ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
-      ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
-    */} else {
-      ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
-      ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+    ElevatorShouldAuto = false;
+  } else if(XboxRightAnalogY > 0.15){
+    ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.25);
+		ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.25);
+    ElevatorShouldAuto = false;
+  } else {
+    if (ElevatorShouldAuto){
+      if(!(ElevatorMotorOne.GetSelectedSensorPosition() > NextPosition-5000 && ElevatorMotorOne.GetSelectedSensorPosition() < NextPosition+5000)){
+        int UpOrDown = abs(ElevatorMotorOne.GetSelectedSensorPosition()-NextPosition)/(ElevatorMotorOne.GetSelectedSensorPosition()-NextPosition);
+        if(UpOrDown > 0){
+          ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, UpOrDown*0.1);
+        ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, UpOrDown*0.1);
+        } else {
+          ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, UpOrDown*0.5);
+          ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, UpOrDown*0.5);
+        }
+      } else {
+        ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+        ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+      }
+    } else {
+      if(ElevatorMotorOne.GetSelectedSensorPosition() < 1000){
+        ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+      } else {
+        ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+        ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+      }
     }
-  //}*/
-
-  if (ElevatorLimitBottom.Get()){
-    ElevatorMotorOne.SetSelectedSensorPosition(0);
   }
 
-  // Move Elevator Up Automatically
+  if (Xbox.GetPOV(0)){
+    if(!TopPOV){
+      if(ToggleBall){
+        NextPosition = (TopHatch - HatchBallOffset) / InchesPerEncUnit;
+      } else {
+        NextPosition = (TopHatch) / InchesPerEncUnit;
+      }
+      TopPOV = true;
+    }
+  } else {
+    TopPOV = false;
+  }
+
+  if (Xbox.GetPOV(90)){
+    if(!RightPOV){
+      ToggleBall = !ToggleBall;
+      RightPOV = true;
+    }
+  } else {
+    RightPOV = false;
+  }
+
+  if (Xbox.GetPOV(180)){
+    if(!BottomPOV){
+      if(ToggleBall){
+        NextPosition = (BottomHatch - HatchBallOffset) / InchesPerEncUnit;
+      } else {
+        NextPosition = (BottomHatch) / InchesPerEncUnit;
+      }
+      BottomPOV = true;
+    }
+  } else {
+    BottomPOV = false;
+  }
+
+  if (Xbox.GetPOV(270)){
+    if(!LeftPOV){
+      if(ToggleBall){
+        NextPosition = (MiddleHatch - HatchBallOffset) / InchesPerEncUnit;
+      } else {
+        NextPosition = (MiddleHatch) / InchesPerEncUnit;
+      }
+      LeftPOV = true;
+    }
+  } else {
+    LeftPOV = false;
+  }
+
+  if(ToggleBall){
+    Xbox.SetRumble(frc::GenericHID::RumbleType::kLeftRumble, 1);
+  }
+
+  /*// Move Elevator Up Automatically
   if (Xbox.GetRawButton(6)){
     if(!ElevatorButtonPressed) {
       NextPosition = ElevatorPositions[ElevatorPosition + 1];
+      ElevatorPosition = ElevatorPosition + 1;
       ElevatorButtonPressed = true;
+      ElevatorShouldAuto = true;
     }
     //Moves Elevator Down Automatically
   } else if (Xbox.GetRawButton(5)){
     if(!ElevatorButtonPressed) {
       NextPosition = ElevatorPositions[ElevatorPosition - 1];
+      ElevatorPosition = ElevatorPosition - 1;
       ElevatorButtonPressed = true;
+      ElevatorShouldAuto = true;
     }
   } else {
     ElevatorButtonPressed = false;
-  }
+  }*/
 
   // Intake Lift
   if (Xbox.GetRawButton(2)){
