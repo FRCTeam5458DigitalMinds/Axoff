@@ -20,9 +20,9 @@
 #include <frc/SpeedControllerGroup.h>
 #include "NetworkTables/NetworkTable.h"
 #include <frc/drive/DifferentialDrive.h>
+#include "networktables/NetworkTableEntry.h"
 #include <frc/smartdashboard/SmartDashboard.h>
 #include "networktables/NetworkTableInstance.h"
-#include "networktables/NetworkTableEntry.h"
 
 
 // Declarations
@@ -100,13 +100,8 @@ bool RightPOV = false;
 bool BottomPOV = false;
 bool LeftPOV = false;
 
-// Limit Switch 
-
 // Joystick & Racewheel
 frc::Joystick JoyAccel1{0}, Xbox{1}, RaceWheel{2};
-
-// LimeLight
-
 
 // Limit Switches
 frc::DigitalInput ElevatorLimitBottom{0};
@@ -132,9 +127,11 @@ void Robot::RobotInit() {
   m_chooser.AddOption(kAutoNameCustom, kAutoNameCustom);
   frc::SmartDashboard::PutData("Auto Modes", &m_chooser);
 
+  //Intakes
   HatchIntake.Set(false);
   CargoIntake.Set(false);
 
+  //Gyro
   Gyro.Reset();
 
   //ElevatorEnc.SetDistancePerPulse(1.037);
@@ -168,25 +165,30 @@ void Robot::AutonomousPeriodic() {
 /*Called when teleop is enabled*/
 void Robot::TeleopInit() {
   
+  //Right side of the motors
   RightMotorOne.SetInverted(true);
   RightMotorTwo.SetInverted(true);
   RightMotorThree.SetInverted(true);
 
+  //Elevator Motor
   ElevatorMotorOne.SetSelectedSensorPosition(-0.1);
-
-  Gyro.Reset();
-
+  //Elevator
   NextPosition = 0;
+
+
+  //Gyro
+  Gyro.Reset();
 
 }
 
 /*Called every robot packet in teleop*/
 void Robot::TeleopPeriodic() {
-  //Gets axis for each controller
+  //Gets axis for each controller (Driving/Operating)
   double JoyY = JoyAccel1.GetY();
   double WheelX = RaceWheel.GetX();
   double XboxRightAnalogY = Xbox.GetRawAxis(5);
 
+  //Limelight
   auto inst = nt::NetworkTableInstance::GetDefault();
   std::shared_ptr<NetworkTable> LimeTable = inst.GetTable("limelight");
   double horiz_angle = LimeTable->GetEntry("tx").GetDouble(0)*10;
@@ -231,10 +233,13 @@ void Robot::TeleopPeriodic() {
     }
   }
 
+  //lines up bot with the targets (Limelight/Vision)
   if (JoyAccel1.GetRawButton(1)){
     WheelX = horiz_angle/1800.0;
   }
-std::cout <<horiz_angle<<std::endl;
+  std::cout <<horiz_angle<<std::endl;
+  
+  //Top Hatch/Cargo
   if (Xbox.GetPOV() == 0){
     if(!TopPOV){
       if(ToggleBall){
@@ -249,6 +254,7 @@ std::cout <<horiz_angle<<std::endl;
     TopPOV = false;
   }
 
+  //Switches to "Cargo Mode" (Pre-sets for Cargo)
   if (Xbox.GetPOV() == 90){
     if(!RightPOV){
       ToggleBall = !ToggleBall;
@@ -258,6 +264,7 @@ std::cout <<horiz_angle<<std::endl;
     RightPOV = false;
   }
 
+  //Bottom Hatch/Cargo
   if (Xbox.GetPOV() == 180){
     if(!BottomPOV){
       if(ToggleBall){
@@ -272,6 +279,7 @@ std::cout <<horiz_angle<<std::endl;
     BottomPOV = false;
   }
 
+  //Middle Hatch/Cargo
   if (Xbox.GetPOV() == 270){
     if(!LeftPOV){
       if(ToggleBall){
