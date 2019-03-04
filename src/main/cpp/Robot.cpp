@@ -18,9 +18,11 @@
 #include <ctre/Phoenix.h>
 #include <frc/ADXRS450_Gyro.h>
 #include <frc/SpeedControllerGroup.h>
-#include <NetworkTables/NetworkTable.h>
+#include "NetworkTables/NetworkTable.h"
 #include <frc/drive/DifferentialDrive.h>
 #include <frc/smartdashboard/SmartDashboard.h>
+#include "networktables/NetworkTableInstance.h"
+#include "networktables/NetworkTableEntry.h"
 
 
 // Declarations
@@ -68,7 +70,7 @@ Ball holes:
 Hatch holes:
   4 | Top    | 75 Inches   | 87622 units
   2 | Middle | 47 Inches   | 51140 units
-  0 | Bottom | 19 Inches   | 14658 units
+  0 | Bottom | 20 Inches   | 14658 units
 
 x inches - 7.75
 ---------------
@@ -81,10 +83,10 @@ WPI_TalonSRX ElevatorMotorTwo{13};
 
 //Set Postitons for the Rocket (Elevator)
 float EncoderHeight = 7.75; // Encoder height from ground inches
-float TopHatch = 75 - EncoderHeight; // Top Hatch height from ground inches
-float MiddleHatch = 47 - EncoderHeight; // Middle Hatch height from ground inches
-float BottomHatch = 19 - EncoderHeight; // Bottom Hatch height from ground inches
-float HatchBallOffset = 8.5; // Inches between ball and hatch holes (Middle & Middle)
+float TopHatch = 69 - EncoderHeight; // Top Hatch height from ground inches
+float MiddleHatch = 39- EncoderHeight; // Middle Hatch height from ground inches
+float BottomHatch = 20 - EncoderHeight; // Bottom Hatch height from ground inches
+float HatchBallOffset = 9; // Inches between ball and hatch holes (Middle & Middle)
 float InchesPerEncUnit = 0.0007675; // Inches per Encoder unit
 float HoleOffset = 2000; // Distance the elevator can move between in encoder units
 float ElevatorSpeedUp = 0.65; // Speed that elevator will move up
@@ -104,7 +106,7 @@ bool LeftPOV = false;
 frc::Joystick JoyAccel1{0}, Xbox{1}, RaceWheel{2};
 
 // LimeLight
-//std::shared_ptr<NetworkTable> LimeTable = NetworkTable::GetTable("limelight");
+
 
 // Limit Switches
 frc::DigitalInput ElevatorLimitBottom{0};
@@ -142,7 +144,7 @@ void Robot::RobotInit() {
 void Robot::RobotPeriodic() {
 
   if (ElevatorLimitBottom.Get()){
-    ElevatorMotorOne.SetSelectedSensorPosition(0);
+    ElevatorMotorOne.SetSelectedSensorPosition(-0.1);
   }
 
 }
@@ -170,7 +172,7 @@ void Robot::TeleopInit() {
   RightMotorTwo.SetInverted(true);
   RightMotorThree.SetInverted(true);
 
-  ElevatorMotorOne.SetSelectedSensorPosition(0);
+  ElevatorMotorOne.SetSelectedSensorPosition(-0.1);
 
   Gyro.Reset();
 
@@ -185,10 +187,15 @@ void Robot::TeleopPeriodic() {
   double WheelX = RaceWheel.GetX();
   double XboxRightAnalogY = Xbox.GetRawAxis(5);
 
+  auto inst = nt::NetworkTableInstance::GetDefault();
+  std::shared_ptr<NetworkTable> LimeTable = inst.GetTable("limelight");
+  double horiz_angle = LimeTable->GetEntry("tx").GetDouble(0)*10;
+  double vert_angle = LimeTable->GetEntry("ty").GetDouble(0);
+
   //Power get's cut from one side of the bot to straighten out when driving straight
   float sumAngle = Gyro.GetAngle();
   float derivAngle = sumAngle - LastSumAngle;
-  float correctionAngle = (sumAngle * 0.04) + (derivAngle *0.02);
+  float correctionAngle = (sumAngle * 0.00) + (derivAngle *0.00);
 
   // Manual Elevator Movement
   if (XboxRightAnalogY < -0.15) {
@@ -224,6 +231,10 @@ void Robot::TeleopPeriodic() {
     }
   }
 
+  if (JoyAccel1.GetRawButton(1)){
+    WheelX = horiz_angle/1800.0;
+  }
+std::cout <<horiz_angle<<std::endl;
   if (Xbox.GetPOV() == 0){
     if(!TopPOV){
       if(ToggleBall){
