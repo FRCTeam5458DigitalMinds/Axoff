@@ -9,6 +9,7 @@
 #include <Robot.h>
 #include <sstream>
 #include <WPILib.h>
+#include <stdlib.h>
 #include <iostream>
 #include <Encoder.h>
 #include <frc/Timer.h>
@@ -18,9 +19,11 @@
 #include <ctre/Phoenix.h>
 #include <frc/ADXRS450_Gyro.h>
 #include <frc/SpeedControllerGroup.h>
-#include <NetworkTables/NetworkTable.h>
+#include "NetworkTables/NetworkTable.h"
 #include <frc/drive/DifferentialDrive.h>
+#include "networktables/NetworkTableEntry.h"
 #include <frc/smartdashboard/SmartDashboard.h>
+#include "networktables/NetworkTableInstance.h"
 
 
 // Declarations
@@ -31,7 +34,7 @@ frc::PowerDistributionPanel pdp{5};
 // Right Side Motors
 WPI_VictorSPX RightMotorOne{6};
 WPI_TalonSRX RightMotorTwo{4};
-WPI_TalonSRX RightMotorThree{3};
+WPI_TalonSRX RightMotorThree{3}; // Encoder
 
 // Left Side Motors
 WPI_VictorSPX LeftMotorOne{10};
@@ -68,7 +71,7 @@ Ball holes:
 Hatch holes:
   4 | Top    | 75 Inches   | 87622 units
   2 | Middle | 47 Inches   | 51140 units
-  0 | Bottom | 19 Inches   | 14658 units
+  0 | Bottom | 20 Inches   | 14658 units
 
 x inches - 7.75
 ---------------
@@ -81,10 +84,10 @@ WPI_TalonSRX ElevatorMotorTwo{13};
 
 //Set Postitons for the Rocket (Elevator)
 float EncoderHeight = 7.75; // Encoder height from ground inches
-float TopHatch = 75 - EncoderHeight; // Top Hatch height from ground inches
-float MiddleHatch = 47 - EncoderHeight; // Middle Hatch height from ground inches
-float BottomHatch = 19 - EncoderHeight; // Bottom Hatch height from ground inches
-float HatchBallOffset = 8.5; // Inches between ball and hatch holes (Middle & Middle)
+float TopHatch = 66 - EncoderHeight; // Top Hatch height from ground inches
+float MiddleHatch = 39- EncoderHeight; // Middle Hatch height from ground inches
+float BottomHatch = 20 - EncoderHeight; // Bottom Hatch height from ground inches
+float HatchBallOffset = 9; // Inches between ball and hatch holes (Middle & Middle)
 float InchesPerEncUnit = 0.0007675; // Inches per Encoder unit
 float HoleOffset = 2000; // Distance the elevator can move between in encoder units
 float ElevatorSpeedUp = 0.65; // Speed that elevator will move up
@@ -98,13 +101,8 @@ bool RightPOV = false;
 bool BottomPOV = false;
 bool LeftPOV = false;
 
-// Limit Switch 
-
 // Joystick & Racewheel
 frc::Joystick JoyAccel1{0}, Xbox{1}, RaceWheel{2};
-
-// LimeLight
-//std::shared_ptr<NetworkTable> LimeTable = NetworkTable::GetTable("limelight");
 
 // Limit Switches
 frc::DigitalInput ElevatorLimitBottom{0};
@@ -119,6 +117,8 @@ int intakeCurrentCounter = 0;
 int intakeCurrentFrames = 5;
 int intakeCurrentThreshold = 10;
 bool intakeStalled = false;
+bool scoreButton = false;
+bool shouldAutoHatch = true;
 
 // Straightens out the bot
 float LastSumAngle;
@@ -130,9 +130,11 @@ void Robot::RobotInit() {
   m_chooser.AddOption(kAutoNameCustom, kAutoNameCustom);
   frc::SmartDashboard::PutData("Auto Modes", &m_chooser);
 
+  //Intakes
   HatchIntake.Set(false);
   CargoIntake.Set(false);
 
+  //Gyro
   Gyro.Reset();
 
   //ElevatorEnc.SetDistancePerPulse(1.037);
@@ -140,6 +142,8 @@ void Robot::RobotInit() {
 
 /*Called on every robot packet, no matter what mode*/
 void Robot::RobotPeriodic() {
+
+  std::cout << shouldAutoHatch << std::endl;
 
   if (ElevatorLimitBottom.Get()){
     ElevatorMotorOne.SetSelectedSensorPosition(0);
@@ -166,29 +170,39 @@ void Robot::AutonomousPeriodic() {
 /*Called when teleop is enabled*/
 void Robot::TeleopInit() {
   
+  //Right side of the motors
   RightMotorOne.SetInverted(true);
   RightMotorTwo.SetInverted(true);
   RightMotorThree.SetInverted(true);
 
-  ElevatorMotorOne.SetSelectedSensorPosition(0);
-
-  Gyro.Reset();
-
+  //Elevator Motor
+  ElevatorMotorOne.SetSelectedSensorPosition(-0.1);
+  //Elevator
   NextPosition = 0;
+
+
+  //Gyro
+  Gyro.Reset();
 
 }
 
 /*Called every robot packet in teleop*/
 void Robot::TeleopPeriodic() {
-  //Gets axis for each controller
+  //Gets axis for each controller (Driving/Operating)
   double JoyY = JoyAccel1.GetY();
   double WheelX = RaceWheel.GetX();
   double XboxRightAnalogY = Xbox.GetRawAxis(5);
 
+  //Limelight
+  auto inst = nt::NetworkTableInstance::GetDefault();
+  std::shared_ptr<NetworkTable> LimeTable = inst.GetTable("limelight");
+  double horiz_angle = LimeTable->GetEntry("tx").GetDouble(0)*10;
+  double vert_angle = LimeTable->GetEntry("ty").GetDouble(0);
+
   //Power get's cut from one side of the bot to straighten out when driving straight
   float sumAngle = Gyro.GetAngle();
   float derivAngle = sumAngle - LastSumAngle;
-  float correctionAngle = (sumAngle * 0.04) + (derivAngle *0.02);
+  float correctionAngle = (sumAngle * 0.00) + (derivAngle *0.00);
 
   // Manual Elevator Movement
   if (XboxRightAnalogY < -0.15) {
@@ -224,6 +238,13 @@ void Robot::TeleopPeriodic() {
     }
   }
 
+  //lines up bot with the targets (Limelight/Vision)
+  if (JoyAccel1.GetRawButton(1)){
+    WheelX = horiz_angle/1800.0;
+  }
+  std::cout <<horiz_angle<<std::endl;
+  
+  //Top Hatch/Cargo
   if (Xbox.GetPOV() == 0){
     if(!TopPOV){
       if(ToggleBall){
@@ -238,6 +259,7 @@ void Robot::TeleopPeriodic() {
     TopPOV = false;
   }
 
+  //Switches to "Cargo Mode" (Pre-sets for Cargo)
   if (Xbox.GetPOV() == 90){
     if(!RightPOV){
       ToggleBall = !ToggleBall;
@@ -247,6 +269,7 @@ void Robot::TeleopPeriodic() {
     RightPOV = false;
   }
 
+  //Bottom Hatch/Cargo
   if (Xbox.GetPOV() == 180){
     if(!BottomPOV){
       if(ToggleBall){
@@ -261,6 +284,7 @@ void Robot::TeleopPeriodic() {
     BottomPOV = false;
   }
 
+  //Middle Hatch/Cargo
   if (Xbox.GetPOV() == 270){
     if(!LeftPOV){
       if(ToggleBall){
@@ -305,18 +329,50 @@ void Robot::TeleopPeriodic() {
     CargoButton = false;
   }
 
-  // Hatch Grabber
-  if (Xbox.GetRawButton(4)){
-    if (!HatchButton){
-      HatchIntake.Set(!HatchIntake.Get());
-      HatchButton = true;
+  if (JoyAccel1.GetRawButton(2)){
+    HatchIntake.Set(false);
+    shouldAutoHatch = false;
+  } else {
+    shouldAutoHatch = true;
+  }
+
+  /*//Score Button
+  if (Xbox.GetRawButton(6)){
+    if(!scoreButton){
+      if(!ToggleBall){
+        int currentEncoder = RightMotorThree.GetSelectedSensorPosition();
+        if (RightMotorThree.GetSelectedSensorPosition() < currentEncoder + 2000) {
+          RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
+          RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
+          RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
+          LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
+          LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
+          LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
+          HatchIntake.Set(false);
+        } else {
+          RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+          RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+          RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+          LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+          LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+          LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        }
+      }
+      scoreButton = true;
     }
   } else {
-    HatchButton = false;
+    scoreButton = false;
+  }*/
+
+  // Hatch Grabber
+  if (Xbox.GetRawButton(4)){
+    HatchIntake.Set(true);
   }
 
   if (!HatchLimitLeft.Get() || !HatchLimitRight.Get()){
-    HatchIntake.Set(false);
+    if(shouldAutoHatch){
+      HatchIntake.Set(true);
+    }
   }
 
   // Intakes the ball when button 3 is pressed
