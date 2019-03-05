@@ -9,6 +9,7 @@
 #include <Robot.h>
 #include <sstream>
 #include <WPILib.h>
+#include <stdlib.h>
 #include <iostream>
 #include <Encoder.h>
 #include <frc/Timer.h>
@@ -116,6 +117,7 @@ int intakeCurrentCounter = 0;
 int intakeCurrentFrames = 5;
 int intakeCurrentThreshold = 10;
 bool intakeStalled = false;
+bool scoreButton = false;
 
 // Straightens out the bot
 float LastSumAngle;
@@ -140,8 +142,10 @@ void Robot::RobotInit() {
 /*Called on every robot packet, no matter what mode*/
 void Robot::RobotPeriodic() {
 
+  std::cout << HatchLimitLeft.Get() << HatchLimitRight.Get() << std::endl;
+
   if (ElevatorLimitBottom.Get()){
-    ElevatorMotorOne.SetSelectedSensorPosition(-0.1);
+    ElevatorMotorOne.SetSelectedSensorPosition(0);
   }
 
 }
@@ -324,6 +328,45 @@ void Robot::TeleopPeriodic() {
     CargoButton = false;
   }
 
+  //Score Button
+  if (Xbox.GetRawButton(6)){
+    if(scoreButton){
+      if(!ToggleBall){
+        RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
+        RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
+        RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
+        LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+        LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+        LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+        frc::WaitCommand(0.5);
+        RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        HatchIntake.Set(false);
+        frc::WaitCommand(0.5);
+        RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
+        RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
+        RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
+        LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
+        LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
+        LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
+        frc::WaitCommand(1);
+        RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+      }
+      scoreButton = true;
+    }
+  } else {
+    scoreButton = false;
+  }
+
   // Hatch Grabber
   if (Xbox.GetRawButton(4)){
     if (!HatchButton){
@@ -335,7 +378,7 @@ void Robot::TeleopPeriodic() {
   }
 
   if (!HatchLimitLeft.Get() || !HatchLimitRight.Get()){
-    HatchIntake.Set(false);
+    HatchIntake.Set(true);
   }
 
   // Intakes the ball when button 3 is pressed
