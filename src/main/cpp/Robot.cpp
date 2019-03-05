@@ -120,14 +120,12 @@ bool intakeStalled = false;
 bool scoreButton = false;
 bool shouldAutoHatch = true;
 bool beScoring = false;
-bool packetCountIsSet = false;
+bool scoreTimeStampIsSet = false;
 int startScorePacketCount = 0;
 
 // Straightens out the bot
 float LastSumAngle;
 float turnFact = 0.9;
-
-int packetCount = 0;
 
 /*Called on robot connection*/
 void Robot::RobotInit() {
@@ -185,9 +183,6 @@ void Robot::TeleopInit() {
   //Elevator
   NextPosition = 0;
 
-  // Reset packet counter
-  packetCount = 0;
-
   //Gyro
   Gyro.Reset();
 
@@ -195,10 +190,6 @@ void Robot::TeleopInit() {
 
 /*Called every robot packet in teleop*/
 void Robot::TeleopPeriodic() {
-
-  packetCount += 1;
-
-  std::cout << packetCount << std::endl;
 
   //Gets axis for each controller (Driving/Operating)
   double JoyY = JoyAccel1.GetY();
@@ -339,12 +330,12 @@ void Robot::TeleopPeriodic() {
   }
 
   if (beScoring) {
-    if (!packetCountIsSet){
-      startScorePacketCount = packetCount;
-      packetCountIsSet = true;
+    if (!scoreTimeStampIsSet){
+      startScorePacketCount = frc::Timer::GetFPGATimestamp()*1000;
+      scoreTimeStampIsSet = true;
     } else {
-      // Run for the first 100 packets
-      if(packetCount < startScorePacketCount + 100){
+      // Run for the first 300 milliseconds
+      if(frc::Timer::GetFPGATimestamp()*1000 < startScorePacketCount + 300){
         RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
         RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
         RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
@@ -352,8 +343,8 @@ void Robot::TeleopPeriodic() {
         LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
         LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
       }
-      // Run between 100 and 150 packets
-      if(packetCount > startScorePacketCount + 100 && packetCount < startScorePacketCount + 150){
+      // Run between 300 and 500 milliseconds
+      if(frc::Timer::GetFPGATimestamp()*1000 > startScorePacketCount + 300 && frc::Timer::GetFPGATimestamp()*1000 < startScorePacketCount + 500){
         RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
         RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
         RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
@@ -364,24 +355,21 @@ void Robot::TeleopPeriodic() {
         ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
         ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
       }
-      // Run between 150 and 400 packets
-      if(packetCount > startScorePacketCount + 150 && packetCount < startScorePacketCount + 400){
+      // Run between 500 and 700 milliseconds
+      if(frc::Timer::GetFPGATimestamp()*1000 > startScorePacketCount + 500 && frc::Timer::GetFPGATimestamp()*1000 < startScorePacketCount + 700){
         RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.3);
         RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.3);
         RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.3);
         LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.3);
         LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.3);
         LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.3);
+        ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
+        ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
       }
-      // Run between 400 and 600 packets
-      if(packetCount > startScorePacketCount + 400 && packetCount < startScorePacketCount + 600){
-        ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.1);
-        ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.1);
-      }
-      // Run after 600 packets
-      if(packetCount > startScorePacketCount + 600){
+      // Run after 600 milliseconds
+      if(frc::Timer::GetFPGATimestamp()*1000 > startScorePacketCount + 700){
         beScoring = false;
-        packetCountIsSet = false;
+        scoreTimeStampIsSet = false;
         startScorePacketCount = 0;
       }
     }
