@@ -352,8 +352,10 @@ void Robot::TeleopPeriodic() {
         LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
         LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
         HatchIntake.Set(false);
-        ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
-        ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
+        if(ElevatorMotorOne.GetSelectedSensorPosition() > 3000){
+          ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
+          ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
+        }
       }
       // Run between 500 and 700 milliseconds
       if(frc::Timer::GetFPGATimestamp()*1000 > startScorePacketCount + 500 && frc::Timer::GetFPGATimestamp()*1000 < startScorePacketCount + 700){
