@@ -34,7 +34,7 @@ frc::PowerDistributionPanel pdp{5};
 // Right Side Motors
 WPI_VictorSPX RightMotorOne{6};
 WPI_TalonSRX RightMotorTwo{4};
-WPI_TalonSRX RightMotorThree{3};
+WPI_TalonSRX RightMotorThree{3}; // Encoder
 
 // Left Side Motors
 WPI_VictorSPX LeftMotorOne{10};
@@ -84,7 +84,7 @@ WPI_TalonSRX ElevatorMotorTwo{13};
 
 //Set Postitons for the Rocket (Elevator)
 float EncoderHeight = 7.75; // Encoder height from ground inches
-float TopHatch = 69 - EncoderHeight; // Top Hatch height from ground inches
+float TopHatch = 66 - EncoderHeight; // Top Hatch height from ground inches
 float MiddleHatch = 39- EncoderHeight; // Middle Hatch height from ground inches
 float BottomHatch = 20 - EncoderHeight; // Bottom Hatch height from ground inches
 float HatchBallOffset = 9; // Inches between ball and hatch holes (Middle & Middle)
@@ -118,6 +118,7 @@ int intakeCurrentFrames = 5;
 int intakeCurrentThreshold = 10;
 bool intakeStalled = false;
 bool scoreButton = false;
+bool shouldAutoHatch = true;
 
 // Straightens out the bot
 float LastSumAngle;
@@ -142,7 +143,7 @@ void Robot::RobotInit() {
 /*Called on every robot packet, no matter what mode*/
 void Robot::RobotPeriodic() {
 
-  std::cout << HatchLimitLeft.Get() << HatchLimitRight.Get() << std::endl;
+  std::cout << shouldAutoHatch << std::endl;
 
   if (ElevatorLimitBottom.Get()){
     ElevatorMotorOne.SetSelectedSensorPosition(0);
@@ -328,57 +329,50 @@ void Robot::TeleopPeriodic() {
     CargoButton = false;
   }
 
-  //Score Button
+  if (JoyAccel1.GetRawButton(2)){
+    HatchIntake.Set(false);
+    shouldAutoHatch = false;
+  } else {
+    shouldAutoHatch = true;
+  }
+
+  /*//Score Button
   if (Xbox.GetRawButton(6)){
-    if(scoreButton){
+    if(!scoreButton){
       if(!ToggleBall){
-        RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
-        RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
-        RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
-        LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
-        LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
-        LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
-        frc::WaitCommand(0.5);
-        RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        HatchIntake.Set(false);
-        frc::WaitCommand(0.5);
-        RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
-        RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
-        RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
-        LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
-        LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
-        LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
-        frc::WaitCommand(1);
-        RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        int currentEncoder = RightMotorThree.GetSelectedSensorPosition();
+        if (RightMotorThree.GetSelectedSensorPosition() < currentEncoder + 2000) {
+          RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
+          RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
+          RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
+          LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
+          LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
+          LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
+          HatchIntake.Set(false);
+        } else {
+          RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+          RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+          RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+          LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+          LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+          LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        }
       }
       scoreButton = true;
     }
   } else {
     scoreButton = false;
-  }
+  }*/
 
   // Hatch Grabber
   if (Xbox.GetRawButton(4)){
-    if (!HatchButton){
-      HatchIntake.Set(!HatchIntake.Get());
-      HatchButton = true;
-    }
-  } else {
-    HatchButton = false;
+    HatchIntake.Set(true);
   }
 
   if (!HatchLimitLeft.Get() || !HatchLimitRight.Get()){
-    HatchIntake.Set(true);
+    if(shouldAutoHatch){
+      HatchIntake.Set(true);
+    }
   }
 
   // Intakes the ball when button 3 is pressed
