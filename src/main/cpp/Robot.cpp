@@ -119,10 +119,15 @@ int intakeCurrentThreshold = 10;
 bool intakeStalled = false;
 bool scoreButton = false;
 bool shouldAutoHatch = true;
+bool beScoring = false;
+bool packetCountIsSet = false;
+int startScorePacketCount = 0;
 
 // Straightens out the bot
 float LastSumAngle;
 float turnFact = 0.9;
+
+int packetCount = 0;
 
 /*Called on robot connection*/
 void Robot::RobotInit() {
@@ -180,6 +185,8 @@ void Robot::TeleopInit() {
   //Elevator
   NextPosition = 0;
 
+  // Reset packet counter
+  packetCount = 0;
 
   //Gyro
   Gyro.Reset();
@@ -188,6 +195,11 @@ void Robot::TeleopInit() {
 
 /*Called every robot packet in teleop*/
 void Robot::TeleopPeriodic() {
+
+  packetCount += 1;
+
+  std::cout << packetCount << std::endl;
+
   //Gets axis for each controller (Driving/Operating)
   double JoyY = JoyAccel1.GetY();
   double WheelX = RaceWheel.GetX();
@@ -299,26 +311,6 @@ void Robot::TeleopPeriodic() {
     LeftPOV = false;
   }
 
-  /*// Move Elevator Up Automatically
-  if (Xbox.GetRawButton(6)){
-    if(!ElevatorButtonPressed) {
-      NextPosition = ElevatorPositions[ElevatorPosition + 1];
-      ElevatorPosition = ElevatorPosition + 1;
-      ElevatorButtonPressed = true;
-      ElevatorShouldAuto = true;
-    }
-    //Moves Elevator Down Automatically
-  } else if (Xbox.GetRawButton(5)){
-    if(!ElevatorButtonPressed) {
-      NextPosition = ElevatorPositions[ElevatorPosition - 1];
-      ElevatorPosition = ElevatorPosition - 1;
-      ElevatorButtonPressed = true;
-      ElevatorShouldAuto = true;
-    }
-  } else {
-    ElevatorButtonPressed = false;
-  }*/
-
   // Intake Lift
   if (Xbox.GetRawButton(2)){
     if (!CargoButton){
@@ -336,33 +328,64 @@ void Robot::TeleopPeriodic() {
     shouldAutoHatch = true;
   }
 
-  /*//Score Button
+  //Score Button
   if (Xbox.GetRawButton(6)){
     if(!scoreButton){
-      if(!ToggleBall){
-        int currentEncoder = RightMotorThree.GetSelectedSensorPosition();
-        if (RightMotorThree.GetSelectedSensorPosition() < currentEncoder + 2000) {
-          RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
-          RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
-          RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.4);
-          LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
-          LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
-          LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
-          HatchIntake.Set(false);
-        } else {
-          RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-          RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-          RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-          LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-          LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-          LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        }
-      }
-      scoreButton = true;
+      beScoring = true;
     }
+    scoreButton = true;
   } else {
     scoreButton = false;
-  }*/
+  }
+
+  if (beScoring) {
+    if (!packetCountIsSet){
+      startScorePacketCount = packetCount;
+      packetCountIsSet = true;
+    } else {
+      // Run for the first 100 packets
+      if(packetCount < startScorePacketCount + 100){
+        RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
+        RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
+        RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.2);
+        LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+        LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+        LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+      }
+      // Run between 100 and 150 packets
+      if(packetCount > startScorePacketCount + 100 && packetCount < startScorePacketCount + 150){
+        RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+        HatchIntake.Set(false);
+        ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
+        ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
+      }
+      // Run between 150 and 400 packets
+      if(packetCount > startScorePacketCount + 150 && packetCount < startScorePacketCount + 400){
+        RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.3);
+        RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.3);
+        RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.3);
+        LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.3);
+        LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.3);
+        LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.3);
+      }
+      // Run between 400 and 600 packets
+      if(packetCount > startScorePacketCount + 400 && packetCount < startScorePacketCount + 600){
+        ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.1);
+        ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.1);
+      }
+      // Run after 600 packets
+      if(packetCount > startScorePacketCount + 600){
+        beScoring = false;
+        packetCountIsSet = false;
+        startScorePacketCount = 0;
+      }
+    }
+  }
 
   // Hatch Grabber
   if (Xbox.GetRawButton(4)){
