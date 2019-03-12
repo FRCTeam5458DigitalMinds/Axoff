@@ -1,13 +1,10 @@
 /*
   2019 - Axoff
-
-  "🅱️"
-    - The Team 5458 Programming Team
 */
 
 #include <string>
-#include <Robot.h>
 #include <sstream>
+#include <Robot.h>
 #include <WPILib.h>
 #include <stdlib.h>
 #include <iostream>
@@ -19,6 +16,7 @@
 #include <ctre/Phoenix.h>
 #include <frc/ADXRS450_Gyro.h>
 #include <frc/SpeedControllerGroup.h>
+#include "cameraserver/CameraServer.h"
 #include "NetworkTables/NetworkTable.h"
 #include <frc/drive/DifferentialDrive.h>
 #include "networktables/NetworkTableEntry.h"
@@ -28,35 +26,49 @@
 
 // Declarations
 
+//Digital Inputs / Electrical components 
+
 // PDP
 frc::PowerDistributionPanel pdp{5};
+// Gyro
+frc::ADXRS450_Gyro Gyro{}; 
+// Limit Switches
+frc::DigitalInput ElevatorLimitBottom{0};
+frc::DigitalInput HatchLimitLeft{1};
+frc::DigitalInput HatchLimitRight{2};
+// Straightens out the bot
+float signed_square(float x){
+  return x * fabsf(x);
+}
+float LastSumAngle;
+float turnFact = 0.9;
+// Joystick & Racewheel
+frc::Joystick JoyAccel1{0}, Xbox{1}, RaceWheel{2};
+
+
+//Motors
 
 // Right Side Motors
 WPI_VictorSPX RightMotorOne{6};
 WPI_TalonSRX RightMotorTwo{4};
 WPI_TalonSRX RightMotorThree{3}; // Encoder
-
 // Left Side Motors
 WPI_VictorSPX LeftMotorOne{10};
 WPI_TalonSRX LeftMotorTwo{11};
 WPI_VictorSPX LeftMotorThree{12};
-
-// Helps Driving 
-float signed_square(float x){
-  return x * fabsf(x);
-}
-// Gyro
-frc::ADXRS450_Gyro Gyro{}; 
-
 // Cargo Intake
 TalonSRX CargoIntakeMotor{2};
 int Spiked = 0;
+//Elevator Motors
+WPI_TalonSRX ElevatorMotorOne{0};
+WPI_TalonSRX ElevatorMotorTwo{13};
+
 
 // Pneumatics
+
 // Lift
 frc::Solenoid CargoIntake{1};
 bool CargoButton = false;
-
 // HatchLock
 frc::Solenoid HatchIntake{0};
 bool HatchButton = false;
@@ -78,9 +90,6 @@ x inches - 7.75
     0.0007675
 */
 
-//Elevator Motors
-WPI_TalonSRX ElevatorMotorOne{0};
-WPI_TalonSRX ElevatorMotorTwo{13};
 
 //Set Postitons for the Rocket (Elevator)
 float EncoderHeight = 7.75; // Encoder height from ground inches
@@ -100,14 +109,7 @@ bool RightPOV = false;
 bool BottomPOV = false;
 bool LeftPOV = false;
 
-// Joystick & Racewheel
-frc::Joystick JoyAccel1{0}, Xbox{1}, RaceWheel{2};
 
-// Limit Switches
-frc::DigitalInput ElevatorLimitBottom{0};
-frc::DigitalInput HatchLimitLeft{1};
-frc::DigitalInput HatchLimitRight{2};
-//                                ^all #s are subject to change...
 
 // Variables for intake
 bool threeFirstPressed = false;
@@ -122,9 +124,6 @@ bool beScoring = false;
 bool scoreTimeStampIsSet = false;
 int startScorePacketCount = 0;
 
-// Straightens out the bot
-float LastSumAngle;
-float turnFact = 0.9;
 
 /*Called on robot connection*/
 void Robot::RobotInit() {
@@ -136,64 +135,31 @@ void Robot::RobotInit() {
   HatchIntake.Set(false);
   CargoIntake.Set(false);
 
-  //Gyro
-  Gyro.Reset();
-
-  //ElevatorEnc.SetDistancePerPulse(1.037);
-}
-
-/*Called on every robot packet, no matter what mode*/
-void Robot::RobotPeriodic() {
-
-  std::cout << shouldAutoHatch << std::endl;
-
-  if (ElevatorLimitBottom.Get()){
-    ElevatorMotorOne.SetSelectedSensorPosition(0);
-  }
-
-}
-
-/*Called when Autonomous is enabled*/
-void Robot::AutonomousInit() {
-  m_autoSelected = m_chooser.GetSelected();
-  std::cout << "Auto selected: " << m_autoSelected << std::endl;
-  if (m_autoSelected == kAutoNameCustom) {
-  } else {
-  }
-
-}
-
-/*Called every robot packet in auto*/
-void Robot::AutonomousPeriodic() {
-  if (m_autoSelected == kAutoNameCustom) {
-  } else {
-  }
-
-  
-}
-
-/*Called when teleop is enabled*/
-void Robot::TeleopInit() {
-  
   //Right side of the motors
   RightMotorOne.SetInverted(true);
   RightMotorTwo.SetInverted(true);
   RightMotorThree.SetInverted(true);
 
   //Elevator Motor
-  ElevatorMotorOne.SetSelectedSensorPosition(-0.1);
-  //Elevator
+  ElevatorMotorOne.SetSelectedSensorPosition(0.0);
   NextPosition = 0;
-
-  //Gyro
-  Gyro.Reset();
 
 }
 
-/*Called every robot packet in teleop*/
-void Robot::TeleopPeriodic() {
+void Robot::TeleopPeriodic() {}
+void Robot::AutonomousPeriodic() {}
+void Robot::TeleopInit() {}
+void Robot::AutonomousInit() {}
 
-  //Gets axis for each controller (Driving/Operating)
+/*Called on every robot packet, no matter what mode*/
+void Robot::RobotPeriodic() {
+
+  //Elevator Limit Switch
+  if (ElevatorLimitBottom.Get()){
+    ElevatorMotorOne.SetSelectedSensorPosition(0);
+  }
+
+//Gets axis for each controller (Driving/Operating)
   double JoyY = JoyAccel1.GetY();
   double WheelX = RaceWheel.GetX();
   double XboxRightAnalogY = Xbox.GetRawAxis(5);
@@ -231,8 +197,8 @@ void Robot::TeleopPeriodic() {
           CargoIntake.Set(true);
         }
       } else {
-        ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
-        ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+        ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
+        ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
       }
     } else {
       if(!beScoring){
@@ -240,8 +206,8 @@ void Robot::TeleopPeriodic() {
           ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
           ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
         } else {
-          ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
-          ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.2);
+          ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
+          ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
         }
       }
     }
@@ -251,7 +217,8 @@ void Robot::TeleopPeriodic() {
   if (JoyAccel1.GetRawButton(1)){
     WheelX = horiz_angle/1800.0;
   }
-  std::cout <<horiz_angle<<std::endl;
+
+  //Pre-Sets
   
   //Top Hatch/Cargo
   if (Xbox.GetPOV() == 0){
@@ -308,6 +275,8 @@ void Robot::TeleopPeriodic() {
     LeftPOV = false;
   }
 
+  //Intakes
+
   // Intake Lift
   if (Xbox.GetRawButton(2)){
     if (!CargoButton){
@@ -324,6 +293,18 @@ void Robot::TeleopPeriodic() {
   } else {
     shouldAutoHatch = true;
   }
+
+ // Hatch Grabber
+  if (Xbox.GetRawButton(4)){
+    HatchIntake.Set(true);
+  }
+
+  if (!HatchLimitLeft.Get() || !HatchLimitRight.Get()){
+    if(shouldAutoHatch){
+      HatchIntake.Set(true);
+    }
+  }
+
 
   //Score Button
   if (Xbox.GetRawButton(6)){
@@ -384,17 +365,7 @@ void Robot::TeleopPeriodic() {
     }
   }
 
-  // Hatch Grabber
-  if (Xbox.GetRawButton(4)){
-    HatchIntake.Set(true);
-  }
-
-  if (!HatchLimitLeft.Get() || !HatchLimitRight.Get()){
-    if(shouldAutoHatch){
-      HatchIntake.Set(true);
-    }
-  }
-
+ 
   // Intakes the ball when button 3 is pressed
   if (Xbox.GetRawButton(3))
   {
@@ -464,7 +435,7 @@ void Robot::TeleopPeriodic() {
     {
 
       if (intakeStalled) CargoIntakeMotor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
-      else CargoIntakeMotor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+      else CargoIntakeMotor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.15);
 
     }
 
@@ -519,7 +490,6 @@ void Robot::TeleopPeriodic() {
   LastSumAngle = sumAngle;
 
 }
-
 
 /*Called every robot packet in testing mode*/
 void Robot::TestPeriodic() {}
