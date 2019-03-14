@@ -73,10 +73,11 @@ bool CargoButton = false;
 frc::Solenoid HatchIntake{0};
 bool HatchButton = false;
 
-// Elevator Stuff
+// Units of measurments for the rocket w/ ecoder units aswell (Elevator)
 /*1 Encoder Unit = 0.0007675 inches
 Encoder at 0 is ~7.75 inch off of the ground
 Ball holes:
+      Rocket   Mesurments    Encoder Units
   5 | Top    | 83.5 Inches | 98697 units
   3 | Middle | 55.5 Inches | 62213 units
   1 | Bottom | 27.5 Inches | 25733 units
@@ -87,11 +88,11 @@ Hatch holes:
 
 x inches - 7.75
 ---------------
-    0.0007675
+    0.0007675 Encoder Unit
 */
 
 
-//Set Postitons for the Rocket (Elevator)
+//Set Postiton Units for the Rocket (Elevator)
 float EncoderHeight = 7.75; // Encoder height from ground inches
 float TopHatch = 66 - EncoderHeight; // Top Hatch height from ground inches
 float MiddleHatch = 39- EncoderHeight; // Middle Hatch height from ground inches
@@ -159,23 +160,23 @@ void Robot::RobotPeriodic() {
     ElevatorMotorOne.SetSelectedSensorPosition(0);
   }
 
-//Gets axis for each controller (Driving/Operating)
+  //Gets axis for each controller (Driving/Operating)
   double JoyY = JoyAccel1.GetY();
   double WheelX = RaceWheel.GetX();
   double XboxRightAnalogY = Xbox.GetRawAxis(5);
 
-  //Limelight
+  //Limelight (Vision System)
   auto inst = nt::NetworkTableInstance::GetDefault();
   std::shared_ptr<NetworkTable> LimeTable = inst.GetTable("limelight");
   double horiz_angle = LimeTable->GetEntry("tx").GetDouble(0)*10;
   double vert_angle = LimeTable->GetEntry("ty").GetDouble(0);
 
-  //Power get's cut from one side of the bot to straighten out when driving straight
+  //Power get's cut from one side of the bot to straighten out when driving straight (Gyro)
   float sumAngle = Gyro.GetAngle();
   float derivAngle = sumAngle - LastSumAngle;
   float correctionAngle = (sumAngle * 0.00) + (derivAngle *0.00);
 
-  // Manual Elevator Movement
+  // Manual Elevator Movement (Up & Down)
   if (XboxRightAnalogY < -0.15) {
     ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
 		ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
@@ -216,9 +217,10 @@ void Robot::RobotPeriodic() {
   //lines up bot with the targets (Limelight/Vision)
   if (JoyAccel1.GetRawButton(1)){
     WheelX = horiz_angle/1800.0;
+    /* JoyY = vert_angle/500.0; */
   }
 
-  //Pre-Sets
+  //Pre-Sets (Rocket and CargoShip)
   
   //Top Hatch/Cargo
   if (Xbox.GetPOV() == 0){
@@ -277,7 +279,7 @@ void Robot::RobotPeriodic() {
 
   //Intakes
 
-  // Intake Lift
+  // Intake Lift (Bar)
   if (Xbox.GetRawButton(2)){
     if (!CargoButton){
       CargoIntake.Set(!CargoIntake.Get());
@@ -444,7 +446,6 @@ void Robot::RobotPeriodic() {
   //Drive Code for CNS and modified for Axon
   //Button 5 on the wheel activates point turning
 	if (RaceWheel.GetRawButton(5)) {
-    std::cout << "hi" << std::endl; 
 		RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, WheelX);
 		RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, WheelX);
 		RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, WheelX);
