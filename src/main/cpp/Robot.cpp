@@ -5,12 +5,12 @@
 #include <string>
 #include <sstream>
 #include <Robot.h>
-#include <WPILib.h>
+#include <frc/WPILib.h>
 #include <stdlib.h>
 #include <iostream>
-#include <Encoder.h>
+#include <frc/Encoder.h>
 #include <frc/Timer.h>
-#include <TimedRobot.h>
+#include <frc/TimedRobot.h>
 #include <frc/Solenoid.h>
 #include <frc/Joystick.h>
 #include <ctre/Phoenix.h>
@@ -31,6 +31,7 @@
 // PDP
 frc::PowerDistributionPanel pdp{5};
 // Gyro
+
 frc::ADXRS450_Gyro Gyro{}; 
 // Limit Switches
 frc::DigitalInput ElevatorLimitBottom{0};
@@ -49,20 +50,21 @@ frc::Joystick JoyAccel1{0}, Xbox{1}, RaceWheel{2};
 //Motors
 
 // Right Side Motors
-WPI_VictorSPX RightMotorOne{6};
-WPI_TalonSRX RightMotorTwo{4};
-WPI_TalonSRX RightMotorThree{3}; // Encoder
+WPI_TalonSRX RightMotorOne{15}; //Encoder
+WPI_VictorSPX RightMotorTwo{14};
+WPI_VictorSPX RightMotorThree{13};
 // Left Side Motors
-WPI_VictorSPX LeftMotorOne{10};
-WPI_TalonSRX LeftMotorTwo{11};
-WPI_VictorSPX LeftMotorThree{12};
+WPI_TalonSRX LeftMotorOne{0}; //Encoder
+WPI_VictorSPX LeftMotorTwo{1};
+WPI_VictorSPX LeftMotorThree{2};
 // Cargo Intake
 TalonSRX CargoIntakeMotor{2};
 int Spiked = 0;
 //Elevator Motors
 WPI_TalonSRX ElevatorMotorOne{0};
 WPI_TalonSRX ElevatorMotorTwo{13};
-
+//Gyro talon
+WPI_TalonSRX GyroP{12};
 
 // Pneumatics
 
@@ -72,7 +74,6 @@ bool CargoButton = false;
 // HatchLock
 frc::Solenoid HatchIntake{0};
 bool HatchButton = false;
-
 // Units of measurments for the rocket w/ ecoder units aswell (Elevator)
 /*1 Encoder Unit = 0.0007675 inches
 Encoder at 0 is ~7.75 inch off of the ground
@@ -126,6 +127,8 @@ bool scoreTimeStampIsSet = false;
 int startScorePacketCount = 0;
 
 
+
+
 /*Called on robot connection*/
 void Robot::RobotInit() {
   m_chooser.SetDefaultOption(kAutoNameDefault, kAutoNameDefault);
@@ -151,6 +154,7 @@ void Robot::TeleopPeriodic() {}
 void Robot::AutonomousPeriodic() {}
 void Robot::TeleopInit() {}
 void Robot::AutonomousInit() {}
+
 
 /*Called on every robot packet, no matter what mode*/
 void Robot::RobotPeriodic() {
@@ -216,8 +220,9 @@ void Robot::RobotPeriodic() {
 
   //lines up bot with the targets (Limelight/Vision)
   if (JoyAccel1.GetRawButton(1)){
-    WheelX = horiz_angle/1800.0;
-    /* JoyY = vert_angle/500.0; */
+    WheelX = horiz_angle/2000.0;
+
+    /* JoyY = vert_angle/1000.0; */
   }
 
   //Pre-Sets (Rocket and CargoShip)
@@ -457,22 +462,22 @@ void Robot::RobotPeriodic() {
   else {
     //Code for regular turning
 	  if ((WheelX < -0.01 || WheelX > 0.01) && (JoyY > 0.06 || JoyY < -0.06)) {
-		  RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -JoyY + turnFact*(WheelX));
-		  RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -JoyY + turnFact*(WheelX));
-      RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -JoyY + turnFact*(WheelX));
-		  LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -JoyY - turnFact*(WheelX));
-		  LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput,  -JoyY - turnFact*(WheelX));
-      LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput,  -JoyY - turnFact*(WheelX));
+		  RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY + turnFact*(WheelX));
+		  RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY + turnFact*(WheelX));
+      RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY + turnFact*(WheelX));
+		  LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY - turnFact*(WheelX));
+		  LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput,  JoyY - turnFact*(WheelX));
+      LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput,  JoyY - turnFact*(WheelX));
 		  Gyro.Reset();
 	  }
 	  //Code for driving straight
 	  else if ((JoyY > 0.06 || JoyY < -0.06)) {
-		  RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -JoyY - correctionAngle);
-		  RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -JoyY - correctionAngle);
-      RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -JoyY - correctionAngle);
-		  LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -JoyY + correctionAngle);
-		  LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -JoyY + correctionAngle);
-      LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -JoyY + correctionAngle);
+		  RightMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY - correctionAngle);
+		  RightMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY - correctionAngle);
+      RightMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY - correctionAngle);
+		  LeftMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY + correctionAngle);
+		  LeftMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY + correctionAngle);
+      LeftMotorThree.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY + correctionAngle);
 	  } 
     else {
 	    if(!beScoring){
