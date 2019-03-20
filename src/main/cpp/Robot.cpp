@@ -131,6 +131,7 @@ int startScorePacketCount = 0;
 
 /*Called on robot connection*/
 void Robot::RobotInit() {
+  frc::CameraServer::GetInstance()->StartAutomaticCapture(0);
   m_chooser.SetDefaultOption(kAutoNameDefault, kAutoNameDefault);
   m_chooser.AddOption(kAutoNameCustom, kAutoNameCustom);
   frc::SmartDashboard::PutData("Auto Modes", &m_chooser);
@@ -175,10 +176,11 @@ void Robot::RobotPeriodic() {
   double horiz_angle = LimeTable->GetEntry("tx").GetDouble(0)*10;
   double vert_angle = LimeTable->GetEntry("ty").GetDouble(0);
 
+
   //Power get's cut from one side of the bot to straighten out when driving straight (Gyro)
   float sumAngle = Gyro.GetAngle();
   float derivAngle = sumAngle - LastSumAngle;
-  float correctionAngle = (sumAngle * 0.00) + (derivAngle *0.00);
+  float correctionAngle = (sumAngle * 0.02) + (derivAngle *0.03);
 
   // Manual Elevator Movement (Up & Down)
   if (XboxRightAnalogY < -0.15) {
