@@ -26,7 +26,7 @@
 
 // Declarations
 
-//Digital Inputs / Electrical components 
+/* Digital Inputs / Electrical components */
 
 // PDP
 frc::PowerDistributionPanel pdp{5};
@@ -47,7 +47,7 @@ float turnFact = 0.9;
 frc::Joystick JoyAccel1{0}, Xbox{1}, RaceWheel{2};
 
 
-//Motors
+/* Motors */
 
 // Right Side Motors
 WPI_TalonSRX RightMotorOne{15}; //Encoder
@@ -66,7 +66,7 @@ WPI_TalonSRX ElevatorMotorTwo{13};
 //Gyro talon
 WPI_TalonSRX GyroP{12};
 
-// Pneumatics
+/* Pneumatics */
 
 // Lift
 frc::Solenoid CargoIntake{1};
@@ -181,7 +181,7 @@ void Robot::RobotPeriodic() {
   float sumAngle = Gyro.GetAngle();
   float derivAngle = sumAngle - LastSumAngle;
   float correctionAngle = (sumAngle * 0.02) + (derivAngle *0.03);
-
+  //                                     ^change variables to accommodate Comp-bot
   // Manual Elevator Movement (Up & Down)
   if (XboxRightAnalogY < -0.15) {
     ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
@@ -225,8 +225,7 @@ void Robot::RobotPeriodic() {
     if (LimeTable->GetEntry("tx").GetDouble(0) > 1 || LimeTable->GetEntry("tx").GetDouble(0) < -1){
       WheelX = LimeTable->GetEntry("tx").GetDouble(0)/100.0;
     }
-    /*
-    WheelX = horiz_angle/2000.0;
+    /* WheelX = horiz_angle/2000.0;
     JoyY = vert_angle/1000.0; */
   }
 
