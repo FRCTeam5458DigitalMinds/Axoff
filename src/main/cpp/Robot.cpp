@@ -173,7 +173,7 @@ void Robot::RobotPeriodic() {
   //Limelight (Vision System)
   auto inst = nt::NetworkTableInstance::GetDefault();
   std::shared_ptr<NetworkTable> LimeTable = inst.GetTable("limelight");
-  double horiz_angle = LimeTable->GetEntry("tx").GetDouble(0)*10;
+  double horiz_angle = LimeTable->GetEntry("tx").GetDouble(0);
   double vert_angle = LimeTable->GetEntry("ty").GetDouble(0);
 
 
@@ -222,9 +222,12 @@ void Robot::RobotPeriodic() {
 
   //lines up bot with the targets (Limelight/Vision)
   if (JoyAccel1.GetRawButton(1)){
+    if (LimeTable->GetEntry("tx").GetDouble(0) > 1 || LimeTable->GetEntry("tx").GetDouble(0) < -1){
+      WheelX = LimeTable->GetEntry("tx").GetDouble(0)/100.0;
+    }
+    /*
     WheelX = horiz_angle/2000.0;
-
-    /* JoyY = vert_angle/1000.0; */
+    JoyY = vert_angle/1000.0; */
   }
 
   //Pre-Sets (Rocket and CargoShip)
