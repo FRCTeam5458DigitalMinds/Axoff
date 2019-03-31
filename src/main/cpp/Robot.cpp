@@ -187,32 +187,38 @@ void Robot::RobotPeriodic() {
     ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
 		ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.75);
     ElevatorShouldAuto = false;
-  } else if(XboxRightAnalogY > 0.15){
+  } 
+  else if(XboxRightAnalogY > 0.15){
     ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.25);
 		ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxRightAnalogY*0.25);
     ElevatorShouldAuto = false;
-  } else {
+  } 
+  else {
     if (ElevatorShouldAuto){
       if(!(ElevatorMotorOne.GetSelectedSensorPosition() > NextPosition-HoleOffset && ElevatorMotorOne.GetSelectedSensorPosition() < NextPosition+HoleOffset)){
         if(ElevatorMotorOne.GetSelectedSensorPosition() > NextPosition+HoleOffset){
           ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, ElevatorSpeedDown);
           ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, ElevatorSpeedDown);
           CargoIntake.Set(true);
-        } else {
+        } 
+        else {
           ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -ElevatorSpeedUp);
           ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -ElevatorSpeedUp);
           CargoIntake.Set(true);
         }
-      } else {
+      } 
+      else {
         ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
         ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
       }
-    } else {
+    } 
+    else {
       if(!beScoring){
         if(ElevatorMotorOne.GetSelectedSensorPosition() < 1000){
           ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
           ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-        } else {
+        } 
+        else {
           ElevatorMotorOne.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
           ElevatorMotorTwo.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.1);
         }
@@ -236,13 +242,15 @@ void Robot::RobotPeriodic() {
     if(!TopPOV){
       if(ToggleBall){
         NextPosition = (TopHatch + 17) / InchesPerEncUnit;
-      } else {
+      }
+      else {
         NextPosition = (TopHatch) / InchesPerEncUnit;
       }
       TopPOV = true;
       ElevatorShouldAuto = true;
     }
-  } else {
+  } 
+  else {
     TopPOV = false;
   }
 
@@ -252,7 +260,8 @@ void Robot::RobotPeriodic() {
       ToggleBall = !ToggleBall;
       RightPOV = true;
     }
-  } else {
+  } 
+  else {
     RightPOV = false;
   }
 
@@ -261,13 +270,15 @@ void Robot::RobotPeriodic() {
     if(!BottomPOV){
       if(ToggleBall){
         NextPosition = (BottomHatch + 19) / InchesPerEncUnit;
-      } else {
+      } 
+      else {
         NextPosition = (BottomHatch) / InchesPerEncUnit;
       }
       BottomPOV = true;
       ElevatorShouldAuto = true;
     }
-  } else {
+  } 
+  else {
     BottomPOV = false;
   }
 
@@ -276,13 +287,15 @@ void Robot::RobotPeriodic() {
     if(!LeftPOV){
       if(ToggleBall){
         NextPosition = (MiddleHatch + 17) / InchesPerEncUnit;
-      } else {
+      } 
+      else {
         NextPosition = (MiddleHatch) / InchesPerEncUnit;
       }
       LeftPOV = true;
       ElevatorShouldAuto = true;
     }
-  } else {
+  } 
+  else {
     LeftPOV = false;
   }
 
@@ -294,14 +307,16 @@ void Robot::RobotPeriodic() {
       CargoIntake.Set(!CargoIntake.Get());
       CargoButton = true;
     }
-  } else {
+  } 
+  else {
     CargoButton = false;
   }
 
   if (JoyAccel1.GetRawButton(2)){
     HatchIntake.Set(false);
     shouldAutoHatch = false;
-  } else {
+  } 
+  else {
     shouldAutoHatch = true;
   }
 
@@ -323,7 +338,8 @@ void Robot::RobotPeriodic() {
       beScoring = true;
     }
     scoreButton = true;
-  } else {
+  } 
+  else {
     scoreButton = false;
   }
 
@@ -331,7 +347,8 @@ void Robot::RobotPeriodic() {
     if (!scoreTimeStampIsSet){
       startScorePacketCount = frc::Timer::GetFPGATimestamp()*1000;
       scoreTimeStampIsSet = true;
-    } else {
+    } 
+    else {
       shouldAutoHatch = false;
       // Run for the first 300 milliseconds
       if(frc::Timer::GetFPGATimestamp()*1000 < startScorePacketCount + 500){
@@ -378,11 +395,9 @@ void Robot::RobotPeriodic() {
 
  
   // Intakes the ball when button 3 is pressed
-  if (Xbox.GetRawButton(3))
-  {
+  if (Xbox.GetRawButton(3)){
     //Check if the intakeStalled variable is false, meaning that the intake motor is not currently stalling
-    if (!intakeStalled)
-    {
+    if (!intakeStalled){
 
       //If the motor is not currently stalled, a counter intakeCurrentCounter is started. This counter is 3 frames long. 
       if (intakeCurrentCounter == 0) {
@@ -396,8 +411,7 @@ void Robot::RobotPeriodic() {
       //This next line artifically creates a delay of 3 frames, increasing the counter value by 1 with every passing frame
       else if (intakeCurrentCounter < intakeCurrentFrames) intakeCurrentCounter = intakeCurrentCounter + 1;
       //Once the counter reaches 3, three frames have passed and its now time to check the current electrical current again
-      else
-      {
+      else{
 
         //After the 3 frame delay, we check for the electrical current again and store this second value in a variable named
         //intakeCurrentEnd
@@ -411,8 +425,7 @@ void Robot::RobotPeriodic() {
         //The next argument in the if statement checks if the electrical current at the end of the 3 frames is greater than the
         //threshold, currently set to 10.
         //This argument lets us know that the motor is probably stalling, to differentiate it from just not intaking anything
-        if ((fabs(intakeCurrentEnd - intakeCurrentStart) < 2) && intakeCurrentEnd > intakeCurrentThreshold)
-        {
+        if ((fabs(intakeCurrentEnd - intakeCurrentStart) < 2) && intakeCurrentEnd > intakeCurrentThreshold){
 
           /*If both of the above arguments are true, we set the intake motor to zero because it must be stalling
           We also set intakeStalled variable to true so that the whole system does not start over until button 3 is released
@@ -426,14 +439,11 @@ void Robot::RobotPeriodic() {
         else CargoIntakeMotor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.8);
 
       }
-
     }
-
   }
   //When button 3 is not pressed, we set the intake motor power to zero.
   //Since the motor cannot be stalling if it's not even running, we also set the intakeStalled variable to false
-  else
-  { 
+  else{ 
   
     //Spit the ball if button 1 is pressed when button 3 is not being pressed
     if (Xbox.GetRawButton(1)) {
@@ -442,14 +452,12 @@ void Robot::RobotPeriodic() {
       intakeStalled = false;
 
     }
-    else 
-    {
+    else{
 
       if (intakeStalled) CargoIntakeMotor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.4);
       else CargoIntakeMotor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.15);
 
     }
-
   }
 
   //Drive Code for CNS and modified for Axon
