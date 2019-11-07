@@ -16,6 +16,7 @@
 #include <TimedRobot.h>
 #include <frc/Joystick.h>
 #include <ctre/Phoenix.h>
+//#include <Encoder.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 
 //Declarations
@@ -39,6 +40,10 @@ WPI_VictorSPX LeftFront {2};
 WPI_VictorSPX LeftMid {1};
 WPI_TalonSRX  LeftBack {0};
 
+//4 Bar
+//WPI_TalonSRX Right4Bar {12};
+//WPI_TalonSRX Left4Bar {3}; //Encoder?
+
 void Robot::RobotInit() {
   m_chooser.SetDefaultOption(kAutoNameDefault, kAutoNameDefault);
   m_chooser.AddOption(kAutoNameCustom, kAutoNameCustom);
@@ -47,9 +52,11 @@ void Robot::RobotInit() {
   srx.Set(ControlMode::PercentOutput, 0);
 
   //Inverted motors
-  RightMid.SetInverted(true);
   LeftFront.SetInverted(true);
-  LeftBack.SetInverted(true);  
+  LeftMid.SetInverted(true);
+  LeftBack.SetInverted(true);
+
+  //Left4Bar.SetInverted(true);
 }
 
 /**
@@ -65,25 +72,26 @@ void Robot::RobotPeriodic() {
   double JoyY = -JoyAccel1.GetY();
   double WheelX = RaceWheel.GetX();
   double XboxRightAnalogY = Xbox.GetRawAxis(5);
+  //double XboxLeftAnalogY = Xbox.GetRawAxis(1);
 
   //Drive code
   //Point turning
   if (RaceWheel.GetRawButton(5)){
-    RightFront.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, WheelX);
-    RightMid.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, WheelX);
-    RightBack.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, WheelX);
-    LeftFront.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -WheelX);
-    LeftMid.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -WheelX);
-    LeftBack.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -WheelX);
+    RightFront.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -WheelX);
+    RightMid.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -WheelX);
+    RightBack.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -WheelX);
+    LeftFront.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, WheelX);
+    LeftMid.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, WheelX);
+    LeftBack.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, WheelX);
   } else {
     //If both controls are being used
     if ((WheelX < -0.01 || WheelX > 0.01) && (JoyY > 0.06 || JoyY < -0.06)) {
-      RightFront.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, WheelX - JoyY);
-      RightMid.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, WheelX - JoyY);
-      RightBack.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, WheelX - JoyY);
-      LeftFront.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput,  -JoyY - WheelX);
-      LeftMid.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -JoyY - WheelX);
-      LeftBack.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -JoyY - WheelX);
+      RightFront.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY - WheelX);
+      RightMid.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY - WheelX);
+      RightBack.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY - WheelX);
+      LeftFront.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY + WheelX);
+      LeftMid.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY + WheelX);
+      LeftBack.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, JoyY + WheelX);
     }
     //Only the JoyY is pressed
     else if ((JoyY > 0.1|| JoyY < -0.1)) {
@@ -104,6 +112,14 @@ void Robot::RobotPeriodic() {
       LeftBack.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
     }
   }
+
+  //4 Bar Code
+  /*if (XboxLeftAnalogY > 0.1 || XboxLeftAnalogY < -0.1) { 
+    
+  } else {
+    Right4Bar.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+    Left4Bar.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+  }*/
 }
 
 /**
