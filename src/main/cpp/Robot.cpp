@@ -40,7 +40,7 @@ WPI_VictorSPX LeftFront {2};
 WPI_VictorSPX LeftMid {1};
 WPI_TalonSRX  LeftBack {0};
 
-//4 Bar
+//4 Bar (both motors are on the same side)
 //WPI_TalonSRX Right4Bar {12};
 //WPI_TalonSRX Left4Bar {3}; //Encoder?
 
@@ -56,7 +56,6 @@ void Robot::RobotInit() {
   LeftMid.SetInverted(true);
   LeftBack.SetInverted(true);
 
-  //Left4Bar.SetInverted(true);
 }
 
 /**
