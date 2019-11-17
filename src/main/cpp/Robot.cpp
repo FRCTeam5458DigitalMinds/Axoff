@@ -50,7 +50,7 @@ WPI_VictorSPX Feeder {11};
 
 //4 Bar
 WPI_TalonSRX Right4Bar {12}; //Encoder
-WPI_VictorSPX Left4Bar {7}; 
+WPI_VictorSPX Left4Bar {7};
 
 double FourBarDegrees = 0;
 
@@ -132,15 +132,15 @@ void Robot::RobotPeriodic() {
     }
   }
 
-  //4 Bar Code  
-  if ((XboxLeftAnalogY > 0.1 /*&& FourBarDegrees > 5*/ ) || (XboxLeftAnalogY < -0.1 /*&& FourBarDegrees < 120*/)) { 
+  //4 Bar Code
+  if ((XboxLeftAnalogY > 0.1 /*&& FourBarDegrees > 5*/ ) || (XboxLeftAnalogY < -0.1 /*&& FourBarDegrees < 120*/)) {
     Right4Bar.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxLeftAnalogY*0.3);
     Left4Bar.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxLeftAnalogY*0.3);
   } else {
     Right4Bar.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.04);
     Left4Bar.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.04);
   }
-  
+
   //Cargo intake
   //intake ball
   if (Xbox.GetRawButton(3)){
