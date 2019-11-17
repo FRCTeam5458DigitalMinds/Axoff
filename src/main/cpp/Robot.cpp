@@ -16,12 +16,16 @@
 #include <TimedRobot.h>
 #include <frc/Joystick.h>
 #include <ctre/Phoenix.h>
-//#include <Encoder.h>
+#include <Encoder.h>
+#include <frc/Solenoid.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 
 //Declarations
 
 TalonSRX srx = {0};
+
+// Pneumatics
+//frc::Solenoid FeederToggle {0};
 
 //PDP
 frc::PowerDistributionPanel pdp{0};
@@ -38,11 +42,22 @@ WPI_TalonSRX  RightBack {15};
 //LeftSideMotors
 WPI_VictorSPX LeftFront {2};
 WPI_VictorSPX LeftMid {1};
-WPI_TalonSRX  LeftBack {0};
+WPI_TalonSRX  LeftBack {3};
+
+//Intake motors
+WPI_VictorSPX Intake {10};
+WPI_VictorSPX Feeder {11};
 
 //4 Bar
-//WPI_TalonSRX Right4Bar {12};
-//WPI_TalonSRX Left4Bar {3}; //Encoder?
+WPI_TalonSRX Right4Bar {12}; //Encoder
+WPI_VictorSPX Left4Bar {7}; 
+
+double FourBarDegrees = 0;
+
+//One encoder rotation is 4096 units
+//One encoder rotation is equal to 1/44 of full 4bar rotation
+//One full 4bar rotation is 180,224 units
+//One 4bar degree is 500
 
 void Robot::RobotInit() {
   m_chooser.SetDefaultOption(kAutoNameDefault, kAutoNameDefault);
@@ -56,7 +71,10 @@ void Robot::RobotInit() {
   LeftMid.SetInverted(true);
   LeftBack.SetInverted(true);
 
-  //Left4Bar.SetInverted(true);
+  //FeederToggle.Set(false);
+
+  Right4Bar.SetSelectedSensorPosition(0.0);
+
 }
 
 /**
@@ -71,8 +89,9 @@ void Robot::RobotPeriodic() {
   //Gets axis for each controller (Driving/Operating)
   double JoyY = -JoyAccel1.GetY();
   double WheelX = RaceWheel.GetX();
-  double XboxRightAnalogY = Xbox.GetRawAxis(5);
-  //double XboxLeftAnalogY = Xbox.GetRawAxis(1);
+  double XboxLeftAnalogY = Xbox.GetRawAxis(1);
+
+  FourBarDegrees = Right4Bar.GetSelectedSensorPosition()/500;
 
   //Drive code
   //Point turning
@@ -113,12 +132,31 @@ void Robot::RobotPeriodic() {
     }
   }
 
-  //4 Bar Code
-  /*if (XboxLeftAnalogY > 0.1 || XboxLeftAnalogY < -0.1) { 
-    
+  //4 Bar Code  
+  if ((XboxLeftAnalogY > 0.1 /*&& FourBarDegrees > 5*/ ) || (XboxLeftAnalogY < -0.1 /*&& FourBarDegrees < 120*/)) { 
+    Right4Bar.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxLeftAnalogY*0.3);
+    Left4Bar.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, XboxLeftAnalogY*0.3);
   } else {
-    Right4Bar.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
-    Left4Bar.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+    Right4Bar.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.04);
+    Left4Bar.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.04);
+  }
+  
+  //Cargo intake
+  //intake ball
+  if (Xbox.GetRawButton(3)){
+    Intake.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.75);
+    //Feeder.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0.5);
+  //shoot ball
+  } else if (Xbox.GetRawButton(1)){
+    Intake.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -0.75);
+  //stop if nothing is pressed
+  } else {
+    Intake.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+    //Feeder.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, 0);
+  }
+  // toggles feeder position
+  /*if (Xbox.GetRawButtonPressed(4)){
+    FeederToggle.Set(!FeederToggle.Get());
   }*/
 }
 
